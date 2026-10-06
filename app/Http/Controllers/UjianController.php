@@ -34,12 +34,14 @@ class UjianController extends Controller
     public function preview(Request $request)
     {
         if (!$request->hasFile('file_excel')) return back();
+
         $file = $request->file('file_excel');
-        // Langsung baca file dari temporary upload path tanpa storeAs()
-        $import = Excel::toArray([], $file->getPathname(), null, \Maatwebsite\Excel\Excel::XLSX);
-        // $file = $request->file('file_excel');
-        // $path = $file->storeAs('temp', 'data_ujian.xlsx');
-        // $import = Excel::toArray([], storage_path('app/'.$path), null, \Maatwebsite\Excel\Excel::XLSX, true);
+        
+        // Simpan file secara eksplisit ke direktori /tmp
+        $file->move('/tmp', 'data_ujian.xlsx');
+        
+        // Baca file dari /tmp
+        $import = Excel::toArray([], '/tmp/data_ujian.xlsx', null, \Maatwebsite\Excel\Excel::XLSX);
         
         $headerJadwal = array_map(fn($v) => $this->clean($v), $import[0][0] ?? []);
         $headerPerwalian = array_map(fn($v) => $this->clean($v), $import[1][0] ?? []);
@@ -154,8 +156,16 @@ class UjianController extends Controller
         if (empty($judulUser)) return "Judul Dokumen Wajib Diisi!";
 
         ini_set('memory_limit', '512M');
-        $path = 'temp/data_ujian.xlsx';
-        $import = Excel::toArray([], storage_path('app/'.$path), null, \Maatwebsite\Excel\Excel::XLSX, true);
+        
+        // Path langsung ke folder /tmp
+        $tempPath = '/tmp/data_ujian.xlsx';
+
+        // Cek apakah file masih ada di /tmp
+        if (!file_exists($tempPath)) {
+            return back()->with('error', 'File Excel temporary telah kadaluwarsa. Silakan upload ulang file Excel Anda.');
+        }
+
+        $import = Excel::toArray([], $tempPath, null, \Maatwebsite\Excel\Excel::XLSX);
         
         $headerJadwal = array_map(fn($v) => $this->clean($v), $import[0][0] ?? []);
         $headerPerwalian = array_map(fn($v) => $this->clean($v), $import[1][0] ?? []);
