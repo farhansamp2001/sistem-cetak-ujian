@@ -3,26 +3,20 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\URL;
 
 class AppServiceProvider extends ServiceProvider
 {
-    /**
-     * Register any application services.
-     *
-     * @return void
-     */
-    public function register()
+    public function register(): void
     {
         //
     }
 
-    /**
-     * Bootstrap any application services.
-     *
-     * @return void
-     */
-    public function boot()
+    public function boot(): void
     {
-        //
+        // Force HTTPS di environment Vercel / Production
+        if (env('APP_ENV') !== 'local' || isset($_SERVER['VERCEL_URL'])) {
+            URL::forceScheme('https');
+        }
     }
 }
