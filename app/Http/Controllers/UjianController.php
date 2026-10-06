@@ -35,8 +35,11 @@ class UjianController extends Controller
     {
         if (!$request->hasFile('file_excel')) return back();
         $file = $request->file('file_excel');
-        $path = $file->storeAs('temp', 'data_ujian.xlsx');
-        $import = Excel::toArray([], storage_path('app/'.$path), null, \Maatwebsite\Excel\Excel::XLSX, true);
+        // Langsung baca file dari temporary upload path tanpa storeAs()
+        $import = Excel::toArray([], $file->getPathname(), null, \Maatwebsite\Excel\Excel::XLSX);
+        // $file = $request->file('file_excel');
+        // $path = $file->storeAs('temp', 'data_ujian.xlsx');
+        // $import = Excel::toArray([], storage_path('app/'.$path), null, \Maatwebsite\Excel\Excel::XLSX, true);
         
         $headerJadwal = array_map(fn($v) => $this->clean($v), $import[0][0] ?? []);
         $headerPerwalian = array_map(fn($v) => $this->clean($v), $import[1][0] ?? []);
