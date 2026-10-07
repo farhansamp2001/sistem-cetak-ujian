@@ -33,16 +33,19 @@ class UjianController extends Controller
 
     public function preview(Request $request)
     {
-        if (!$request->hasFile('file_excel')) return back();
-
-        $file = $request->file('file_excel');
-        
-        // Simpan & baca file dari /tmp untuk request saat ini
-        $file->move('/tmp', 'data_ujian.xlsx');
-        $import = Excel::toArray([], '/tmp/data_ujian.xlsx', null, \Maatwebsite\Excel\Excel::XLSX);
-        
-        // Simpan hasil import ke Session Laravel
-        session(['excel_data' => $import]);
+        // 1. Jika form mengunggah file Excel baru via POST
+        if ($request->hasFile('file_excel')) {
+            $file = $request->file('file_excel');
+            $file->move('/tmp', 'data_ujian.xlsx');
+            $import = Excel::toArray([], '/tmp/data_ujian.xlsx', null, \Maatwebsite\Excel\Excel::XLSX);
+            session(['excel_data' => $import]);
+        } else {
+            // 2. Jika diakses via GET (refresh / redirect back dari validasi error)
+            $import = session('excel_data');
+            if (!$import) {
+                return redirect()->route('upload')->with('error', 'Silakan unggah file Excel terlebih dahulu.');
+            }
+        }
         
         $headerJadwal = array_map(fn($v) => $this->clean($v), $import[0][0] ?? []);
         $headerPerwalian = array_map(fn($v) => $this->clean($v), $import[1][0] ?? []);
