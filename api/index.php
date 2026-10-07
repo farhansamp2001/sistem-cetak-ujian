@@ -14,10 +14,10 @@ foreach ($storageDirs as $dir) {
     }
 }
 
-// Redirect storage, cache, dan SESSION path ke /tmp
+// Redirect storage, cache, dan session file path ke /tmp
 putenv('APP_STORAGE=/tmp/storage');
 putenv('SESSION_DRIVER=file');
-putenv('SESSION_PATH=/tmp/storage/framework/sessions');
+putenv('SESSION_FILE_PATH=/tmp/storage/framework/sessions');
 putenv('APP_SERVICES_CACHE=/tmp/bootstrap/cache/services.php');
 putenv('APP_PACKAGES_CACHE=/tmp/bootstrap/cache/packages.php');
 putenv('APP_CONFIG_CACHE=/tmp/bootstrap/cache/config.php');
@@ -27,7 +27,7 @@ putenv('VIEW_COMPILED_PATH=/tmp/storage/framework/views');
 
 $_ENV['APP_STORAGE'] = '/tmp/storage';
 $_ENV['SESSION_DRIVER'] = 'file';
-$_ENV['SESSION_PATH'] = '/tmp/storage/framework/sessions';
+$_ENV['SESSION_FILE_PATH'] = '/tmp/storage/framework/sessions';
 $_ENV['APP_SERVICES_CACHE'] = '/tmp/bootstrap/cache/services.php';
 $_ENV['APP_PACKAGES_CACHE'] = '/tmp/bootstrap/cache/packages.php';
 $_ENV['APP_CONFIG_CACHE'] = '/tmp/bootstrap/cache/config.php';
