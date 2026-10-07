@@ -32,28 +32,29 @@ class UjianController extends Controller
     }
 
     public function preview(Request $request)
-    {
-        if (!$request->hasFile('file_excel')) return back();
+{
+    if (!$request->hasFile('file_excel')) return back();
 
-        $file = $request->file('file_excel');
-        
-        // Simpan file secara eksplisit ke direktori /tmp
-        $file->move('/tmp', 'data_ujian.xlsx');
-        
-        // Baca file dari /tmp
-        $import = Excel::toArray([], '/tmp/data_ujian.xlsx', null, \Maatwebsite\Excel\Excel::XLSX);
-        
-        $headerJadwal = array_map(fn($v) => $this->clean($v), $import[0][0] ?? []);
-        $headerPerwalian = array_map(fn($v) => $this->clean($v), $import[1][0] ?? []);
+    $file = $request->file('file_excel');
+    
+    // Simpan & baca file dari /tmp untuk request saat ini
+    $file->move('/tmp', 'data_ujian.xlsx');
+    $import = Excel::toArray([], '/tmp/data_ujian.xlsx', null, \Maatwebsite\Excel\Excel::XLSX);
+    
+    // KUNCI PERBAIKAN: Simpan hasil import ke Session Laravel
+    session(['excel_data' => $import]);
+    
+    $headerJadwal = array_map(fn($v) => $this->clean($v), $import[0][0] ?? []);
+    $headerPerwalian = array_map(fn($v) => $this->clean($v), $import[1][0] ?? []);
 
-        $getIdx = function($headers, $keywords) {
-            foreach ($headers as $index => $text) {
-                foreach ($keywords as $key) {
-                    if (str_contains($text, $key)) return $index;
-                }
+    $getIdx = function($headers, $keywords) {
+        foreach ($headers as $index => $text) {
+            foreach ($keywords as $key) {
+                if (str_contains($text, $key)) return $index;
             }
-            return null;
-        };
+        }
+        return null;
+    };
 
         // Header Jadwal
         $cJ_Ruang = $getIdx($headerJadwal, ['ruang', 'rg']);
@@ -149,26 +150,23 @@ class UjianController extends Controller
 
     public function prosesCetak(Request $request)
     {
-        $selectedRows = $request->input('pilihan_baris');
-        $judulUser = $request->input('judul_header');
-
-        if (empty($selectedRows)) return "Pilih minimal satu jadwal.";
-        if (empty($judulUser)) return "Judul Dokumen Wajib Diisi!";
-
         ini_set('memory_limit', '512M');
-        
-        // Path langsung ke folder /tmp
-        $tempPath = '/tmp/data_ujian.xlsx';
+        set_time_limit(300); // Set waktu eksekusi PHP hingga 5 menit
+    if (empty($selectedRows)) return "Pilih minimal satu jadwal.";
+    if (empty($judulUser)) return "Judul Dokumen Wajib Diisi!";
 
-        // Cek apakah file masih ada di /tmp
-        if (!file_exists($tempPath)) {
-            return back()->with('error', 'File Excel temporary telah kadaluwarsa. Silakan upload ulang file Excel Anda.');
-        }
+    ini_set('memory_limit', '512M');
 
-        $import = Excel::toArray([], $tempPath, null, \Maatwebsite\Excel\Excel::XLSX);
-        
-        $headerJadwal = array_map(fn($v) => $this->clean($v), $import[0][0] ?? []);
-        $headerPerwalian = array_map(fn($v) => $this->clean($v), $import[1][0] ?? []);
+    // Ambil data dari Session (tidak butuh file fisik /tmp lagi)
+    $import = session('excel_data');
+
+    // Jika session habis/hilang
+    if (!$import) {
+        return back()->with('error', 'Sesi telah habis atau file belum diunggah. Silakan unggah ulang file Excel.');
+    }
+
+    $headerJadwal = array_map(fn($v) => $this->clean($v), $import[0][0] ?? []);
+    $headerPerwalian = array_map(fn($v) => $this->clean($v), $import[1][0] ?? []);
 
         $getIdx = function($headers, $keywords) {
             foreach ($headers as $index => $text) {
